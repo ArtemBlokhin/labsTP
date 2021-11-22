@@ -1,190 +1,275 @@
 #include <iostream>
+#include <fstream>
 using namespace std;
-void createMatrix(int** a,int x) 
+
+ifstream fin("input.txt");
+
+struct Matrix
 {
-    for (int i = 0; i < x; i++) 
-    {
-        a[i] = new int[x];          
-    };
+   int* A;
+   int* LI;
+   int* LJ;
+   int N, NZ;
+};
 
-    cout << "Введите данные матрицы \n" << endl;
-    //цикл в которой перебираем строки матрицы
-    for (int i = 0; i < x; i++) 
-    {
-        //цикл в котором перебираем элементы внутри строки
-        for (int j = 0; j < x; j++) 
-        {
-            cin >> a[i][j];
-        };
-    };
-    cout << "Матрица сгенерирована \n";
-    for (int i = 0; i < x; i++)
-    {
-        // в котором перебираем строки матрицы
-        for (int j = 0; j < x; j++) 
-        {
-            cout << a[i][j] << "\t";
-        }
-        cout << endl;
-    };
-}
-void createA(int** a, int x, int* arr_A, int num_A) {
-    cout << "Массив значений A" << endl;
-    for (int i = 0; i < x; i++)
-    {
-        for (int j = 0; j < x; j++)
-            if (a[i][j] != 0) {
-                arr_A[num_A] = a[i][j];
-                cout << arr_A[num_A] << "\t";
-                num_A += 1;
-            };
-    };
-
-    cout << endl;
-}
-void createLJ(int** a, int x, int* arr_LJ, int num_LJ) 
+int input(int a, int b)
 {
-    cout << "Массив значений LJ" << endl;
-    for (int i = 0; i < x; i++)
-    {
-        for (int j = 0; j < x; j++)
-            if (a[i][j] != 0) {
-                arr_LJ[num_LJ] = j + 1;
-                cout << arr_LJ[num_LJ] << "\t";
-                num_LJ += 1;
-            };
-    };
+   while (true)                                      // цикл продолжается до тех пор, пока пользователь не введет корректное значение
+   {
+      int n;
 
-    cout << endl;
+      if (a == 0)
+         cin >> n;
+      else
+         fin >> n;
+
+      if(b == 0)
+      {
+         if (n > 0)
+            return n;
+
+         cin.clear();                                   // возвращаем cin в обычный режим работы
+         cin.ignore(INT_MAX, '\n');      // и удаляем значения предыдущего ввода из входного буфера
+         cout << "Вы ввели символ или число <= 0! Повторите ввод: \n";
+      }
+      else
+      {
+         if (cin.fail())
+         {
+            cin.clear();                                   // возвращаем cin в обычный режим работы
+            cin.ignore(INT_MAX, '\n');      // и удаляем значения предыдущего ввода из входного буфера
+            cout << "Вы ввели символ или число < 0! Повторите ввод: \n";
+         }
+
+         return n;
+      }
+   }
 }
-void createLI(int** a,int x,int* arr_LI,int num_LI,int* arr_A,int num_A) {
-    int count = 0, count2 = 0;
-    cout << "Массив значений LI" << endl;
 
-    for (int i = 0; i < x; i++) {
-        for (int j = 0; j < x; j++) {
-            if (a[i][j] == 0) {
-                count += 1;
-                if (count == x) {
-                    count = 0;
-                    count2 += 1;
-                }
+int step(int a, int b)     // функция возвредения числа в степень
+{
+   if (b == 0)
+      return 1;
+
+   if (b == 1)
+      return a;
+
+   return a * step(a, b - 1);
+}
+
+Matrix* compress(int** arr, int N)     // функция упаковки матрицы
+{
+   Matrix* matrix = new Matrix;
+   matrix->N = N;
+   matrix->NZ = 0;
+
+   for (int i = 0; i < N; i++)
+   {
+      for (int j = 0; j < N; j++)
+      {
+         if (arr[i][j] != 0)
+            matrix->NZ++;             // считаем количество ненулевых элементов
+      }
+   }
+
+   matrix->A = new int[matrix->NZ];
+   matrix->LJ = new int[matrix->NZ];
+   matrix->LI = new int[matrix->N + 1];
+
+   int t = -1;                        // число-флаг для заполнения LI
+
+   for (int i = 0, m = 0; i < N; i++)
+   {
+      for (int j = 0; j < N; j++)
+      {
+
+         if (arr[i][j] != 0)
+         {
+            matrix->A[m] = arr[i][j];  // заполняем массив элементов
+            matrix->LJ[m] = j + 1;     // заполняем массив номеров столбцов элементов
+            m++;
+            if (t < i)                 // если меньше чем i, значит были стооки без ненулевых элементов
+            {
+               int l = i - 1;
+               matrix->LI[i] = m;      // записываем значение первого ненулевого элемента в строке
+               while (i > 0 && matrix->LI[l] == 0)
+               {
+                  matrix->LI[l] = matrix->LI[i];  // заполняем предыдущие, если равны 0
+                  l--;
+               }
+               t = i;
             }
-            else {
-                for (int k = 0; k < num_A - 1; k++) {
-                    if (a[i][j] == arr_A[k]) {
-                        if (count2 == 0) {
-                            arr_LI[num_LI] = k + 1;
-                            cout << arr_LI[num_LI] << "\t";
-                            num_LI += 1;
-                            count = 0;
-                        }
-                        else {
-                            for (int f = 0; f <= count2; f++) {
-                                arr_LI[num_LI] = k + 1;
-                                cout << arr_LI[num_LI] << "\t";
-                                num_LI += 1;
-                            }
-                            count = 0;
-                            count2 = 0;
-                            num_LI += 1;
-                        };
-                    };
-                };
-                break;
-            };
-        };
-    };
-    arr_LI[num_LI] = num_A + 1;
-    cout << arr_LI[num_LI] << endl;
-    cout << num_LI << endl;
-}
-void getMatrixWithoutRowAndCol(int** matrix, int size, int row, int col, int** newMatrix) {
-    int offsetRow = 0; //Смещение индекса строки в матрице
-    int offsetCol = 0; //Смещение индекса столбца в матрице
-    for (int i = 0; i < size - 1; i++) {
-        //Пропустить row-ую строку
-        if (i == row) {
-            offsetRow = 1; //Как только встретили строку, которую надо пропустить, делаем смещение для исходной матрицы
-        }
+         }
+      }
+      if (t == i - 1)
+         matrix->LI[i] = 0;
+   }
 
-        offsetCol = 0; //Обнулить смещение столбца
-        for (int j = 0; j < size - 1; j++) {
-            //Пропустить col-ый столбец
-            if (j == col) {
-                offsetCol = 1; //Встретили нужный столбец, проускаем его смещением
+   matrix->LI[N] = matrix->NZ + 1;                // заполняем последнее значение LI
+   for (int i = N - 1; matrix->LI[i] == 0; i--)   // также предыдущие, если были равны 0
+      matrix->LI[i] = matrix->NZ + 1;
+
+   //-------------------------
+   for (int i = 0; i < N; i++)         // очистка памяти
+      delete[] arr[i];
+   delete[] arr;
+   arr = nullptr;
+   //-------------------------
+   return matrix;
+}
+
+int** decompress(Matrix* matrix)       // функция распаковки матрицы
+{
+   int N = matrix->N;
+
+   int** arr = new int* [N];           // двумерный массив, в который будет распаковываться матрица
+   int* rows = new int[N];             // массив, который содержит количество ненулевых элементов в строке
+
+   for (int i = 0; i < N; i++)
+   {
+      rows[i] = matrix->LI[i + 1] - matrix->LI[i] - 1;
+      arr[i] = new int[N];
+   }
+
+   for (int i = 0, k = 0; i < N; i++)
+   {
+      for (int j = 0, m = 0; j < N; j++)
+      {
+         if (matrix->LJ[k] == j + 1)                // если номер столбца совпадает с j
+         {
+            if (rows[i] > -1 && m <= rows[i])       // смотрим сколько элементов в этой строке
+            {
+               arr[i][j] = matrix->A[k];            // заполняем элементы
+               k++;
+               m++;
             }
+            else
+               arr[i][j] = 0;
+         }
+         else
+            arr[i][j] = 0;
+      }
+   }
 
-            newMatrix[i][j] = matrix[i + offsetRow][j + offsetCol];
-        }
-    }
+   //-------------------------
+   delete[] rows;                   // очищаем память
+   rows = nullptr;
+   //-------------------------
+
+   return arr;
 }
-int matrixDet(int** matrix, int size) {
-    int det = 0;
-    int degree = 1; // (-1)^(1+j) из формулы определителя
 
-    //Условие выхода из рекурсии
-    if (size == 1) {
-        return matrix[0][0];
-    }
-    //Условие выхода из рекурсии
-    else if (size == 2) {
-        return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
-    }
-    else {
-        //Матрица без строки и столбца
-        int** newMatrix = new int* [size - 1];
-        for (int i = 0; i < size - 1; i++) {
-            newMatrix[i] = new int[size - 1];
-        }
-
-        //Раскладываем по 0-ой строке, цикл бежит по столбцам
-        for (int j = 0; j < size; j++) {
-            //Удалить из матрицы i-ю строку и j-ый столбец
-            //Результат в newMatrix
-            getMatrixWithoutRowAndCol(matrix, size, 0, j, newMatrix);
-
-            //Рекурсивный вызов
-            //По формуле: сумма по j, (-1)^(1+j) * matrix[0][j] * minor_j (это и есть сумма из формулы)
-            //где minor_j - дополнительный минор элемента matrix[0][j]
-            // (напомню, что минор это определитель матрицы без 0-ой строки и j-го столбца)
-            det = det + (degree * matrix[0][j] * matrixDet(newMatrix, size - 1));
-            //"Накручиваем" степень множителя
-            degree = -degree;
-        }
-
-        //Чистим память на каждом шаге рекурсии(важно!)
-        for (int i = 0; i < size - 1; i++) {
-            delete[] newMatrix[i];
-        }
-        delete[] newMatrix;
-    }
-
-    return det;
+Matrix* read(int N, int k)                    // функция чтения/записи матрицы
+{
+   int** arr = new int* [N];           // массив для чтения матрицы
+   for (int i = 0; i < N; i++)
+   {
+      arr[i] = new int[N];
+      for (int j = 0; j < N; j++)
+         arr[i][j] = input(k, 1);
+   }
+   return compress(arr, N);
 }
+
+void print(Matrix* matrix)             // функция вывода матрицы
+{
+   int N = matrix->N;
+   int** arr = decompress(matrix);     // массивы для вывода матрицы
+
+   cout << "\nМатрица: \n";
+
+   for (int i = 0; i < N; i++)
+   {
+      for (int j = 0; j < N; j++)
+         cout << arr[i][j] << " ";
+      cout << '\n';
+   }
+
+   cout << "\nA: ";
+   for (int i = 0; i < matrix->NZ; i++)
+      cout << matrix->A[i] << " ";
+
+   cout << "\nLJ: ";
+   for (int i = 0; i < matrix->NZ; i++)
+      cout << matrix->LJ[i] << " ";
+
+   cout << "\nLI: ";
+   for (int i = 0; i < N + 1; i++)
+      cout << matrix->LI[i] << " ";
+
+   cout << '\n';
+
+   //-------------------------
+   for (int i = 0; i < N; i++)         // очистка памяти
+      delete[] arr[i];
+   delete[] arr;
+   arr = nullptr;
+   //-------------------------
+}
+
+int recursiveSolution(int** arr, int n)           // функция поиска определителя матрицы
+{
+   if (n < 2)
+      return 0;
+
+   if (n == 2)                                    // если матрица размерности 2
+      return arr[0][0] * arr[1][1] - arr[0][1] * arr[1][0];
+
+   int d = 0;
+
+   for(int k = 0; k < n; k++)                     // делаем разложение по строке и столбцу
+   {
+      int** newArr = new int* [n - 1];            // новый массив меньшего размера
+      for(int ii = 0, a = 0; ii < n; ii++)
+      {
+         newArr[ii] = new int[n - 1];
+         for(int jj = 0, b = 0; jj < n; jj++)
+         {
+            if(ii != k && jj != k)                // если наши счетчики не равны значению k
+            {
+               newArr[a][b] = arr[ii][jj];        // записываем
+               b++;
+            }
+         }
+
+         if(ii != k)
+            a++;
+      }
+      d = d + step(-1, k) * recursiveSolution(newArr, n - 1);  // считаем определитель, как сумму дальнейших вызовов функции
+   }
+
+   return d;
+}
+
+int solution(Matrix* matrix)       // функция решения задачи
+{
+   int** arr = decompress(matrix);             // распаковываем матрицу
+   int dM = recursiveSolution(arr, matrix->N); // отправляем на рекурсивный поиск определителя
+   return dM;
+}
+
 int main()
 {
-    setlocale(LC_ALL, "RUS");
-    int num_A = 0, num_LJ = 0, num_LI = 0, N;
-    int* arr_A = new int[num_A];
-    int* arr_LJ = new int[num_LJ];
-    int* arr_LI = new int[num_LI];
-    cout << "Введите размерность матрицы:"; //ввод количества строк
-    cin >> N;
-    int** a = new int* [N];
+   setlocale(LC_ALL, "Rus");
 
-    createMatrix(a, N);
-    createA(a, N, arr_A, num_A);
-    createLJ(a, N, arr_LJ, num_LJ);
-    createLI(a, N, arr_LI, num_LI, arr_A, num_A);
-    cout<< matrixDet(a, N) << endl;
-    for (int i = 0; i < N; i++) {
-        delete[] a[i];
-    }
-    delete[] a;
-    //delete[] arr_LI;
-    //delete[] arr_A;
-    //delete[] arr_LJ;   
-    system("pause");
-    return 0;
-};
+   int k = 0;
+   cout << "Как будем осуществлять ввода матрицы?\n 0. Клавиатура.\n 1. Файл.\n";
+   cin >> k;
+
+   cout << "\nВведите размер матрицы: ";
+   int N = input(k, 0);
+   cout << '\n';
+
+   Matrix* matrix = read(N, k);
+   print(matrix);
+
+   cout << "\nОпределитель матрицы = " << solution(matrix) << '\n';
+
+
+   //-------Очистка памяти------
+   delete matrix;
+   matrix = nullptr;
+   //---------------------------
+
+   return 0;
+}
